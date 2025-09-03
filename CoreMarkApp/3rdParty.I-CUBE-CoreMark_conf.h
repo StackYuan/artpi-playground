@@ -31,7 +31,7 @@
 	MiddleWare version :
 */
 /*---------- ITERATIONS  -----------*/
-#define ITERATIONS      10000
+#define ITERATIONS      40000
 
 /*---------- PRINTF_UART_PORT  -----------*/
 #define PRINTF_UART_PORT      huart4

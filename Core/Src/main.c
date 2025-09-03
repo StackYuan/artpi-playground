@@ -69,12 +69,12 @@ size_t __write(int handle, const unsigned char *buffer, size_t size)
         return 0;
     }
 
-    // 只处理 stdout 和 stderr
+    // ??? stdout ? stderr
     if (handle != _LLIO_STDOUT && handle != _LLIO_STDERR) {
         return _LLIO_ERROR;
     }
 
-    // 通过 UART4 发送数据
+    // ?? UART4 ????
     HAL_UART_Transmit(&huart4, (uint8_t *)buffer, size, HAL_MAX_DELAY);
 
     return size;
@@ -91,6 +91,14 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
   /* USER CODE END 1 */
+
+  /* Enable the CPU Cache */
+
+  /* Enable I-Cache---------------------------------------------------------*/
+  SCB_EnableICache();
+
+  /* Enable D-Cache---------------------------------------------------------*/
+  SCB_EnableDCache();
 
   /* MCU Configuration--------------------------------------------------------*/
 

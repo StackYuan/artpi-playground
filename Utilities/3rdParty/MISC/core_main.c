@@ -35,23 +35,58 @@ El Dorado Hills, CA, 95762
 static ee_u16 list_known_crc[]   =      {(ee_u16)0xd4b0,(ee_u16)0x3340,(ee_u16)0x6a79,(ee_u16)0xe714,(ee_u16)0xe3c1};
 static ee_u16 matrix_known_crc[] =      {(ee_u16)0xbe52,(ee_u16)0x1199,(ee_u16)0x5608,(ee_u16)0x1fd7,(ee_u16)0x0747};
 static ee_u16 state_known_crc[]  =      {(ee_u16)0x5e47,(ee_u16)0x39bf,(ee_u16)0xe5a4,(ee_u16)0x8e3a,(ee_u16)0x8d84};
+
+int coremark_start = 0;
+
+#define ITEM_NUM 40000
+#define ITEM_NUM_DIS (400*7)
+
 void *iterate(void *pres) {
 	ee_u32 i;
 	ee_u16 crc;
 	core_results *res=(core_results *)pres;
 	ee_u32 iterations=res->iterations;
+	ee_u32 iterations_dis = 0;
+
 	res->crc=0;
 	res->crclist=0;
 	res->crcmatrix=0;
 	res->crcstate=0;
 
-	for (i=0; i<iterations; i++) {
-		crc=core_bench_list(res,1);
-		res->crc=crcu16(crc,res->crc);
-		crc=core_bench_list(res,-1);
-		res->crc=crcu16(crc,res->crc);
-		if (i==0) res->crclist=res->crc;
+	if (coremark_start == 0)
+	{
+		iterations = ITEM_NUM;
+		for (i=0; i<iterations; i++) {
+			crc=core_bench_list(res,1);
+			res->crc=crcu16(crc,res->crc);
+			crc=core_bench_list(res,-1);
+			res->crc=crcu16(crc,res->crc);
+			if (i==0) res->crclist=res->crc;
+		}
 	}
+	if (coremark_start == 1)
+	{
+		iterations = ITEM_NUM;
+		iterations_dis = ITEM_NUM_DIS;
+
+		for (i=0; i<iterations; i++) {
+
+			if (i > iterations - iterations_dis)
+			{
+				SCB_DisableDCache();
+				SCB_DisableICache();
+			}
+			
+			crc=core_bench_list(res,1);
+			res->crc=crcu16(crc,res->crc);
+			crc=core_bench_list(res,-1);
+			res->crc=crcu16(crc,res->crc);
+			if (i==0) res->crclist=res->crc;
+		}
+		SCB_EnableDCache();
+		SCB_EnableICache();
+	}
+	
 	return NULL;
 }
 
@@ -212,6 +247,7 @@ MAIN_RETURN_TYPE coremark_main(int argc, char *argv[]) {
 		results[0].iterations*=1+10/divisor;
 	}
 	/* perform actual benchmark */
+	coremark_start=0;
 	start_time();
 #if (MULTITHREAD>1)
 	if (default_num_contexts>MULTITHREAD) {
@@ -229,6 +265,7 @@ MAIN_RETURN_TYPE coremark_main(int argc, char *argv[]) {
 	iterate(&results[0]);
 #endif
 	stop_time();
+	coremark_start=0;
 	total_time=get_time();
 	/* get a function of the input to report */
 	seedcrc=crc16(results[0].seed1,seedcrc);
